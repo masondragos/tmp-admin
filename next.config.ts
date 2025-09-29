@@ -1,12 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Enable host header check bypass for Replit proxy
+  // Configure for Replit environment - experimental allowedDevOrigins
   experimental: {
-    // Allow all hosts in dev mode for Replit proxy support
+    allowedDevOrigins: ['*.replit.dev', '*.replit.com', '*.spock.replit.dev'],
   },
   
-  // Configure for Replit environment
   env: {
     HOSTNAME: "0.0.0.0",
     PORT: "5000"
