@@ -62,18 +62,22 @@ export default function ApplicantChatPage() {
     name: string;
     email?: string;
   } | null>(null);
+  const [typingUsers, setTypingUsers] = useState<string[]>([]);
 
   useEffect(() => {
     fetchConversations();
   }, []);
 
   const socketRef = useRef<any>(null);
-  const handlerRef = useRef<((message: any) => void) | null>(null);
+  const messageHandlerRef = useRef<((message: any) => void) | null>(null);
+  const typingStartHandlerRef = useRef<((data: any) => void) | null>(null);
+  const typingStopHandlerRef = useRef<((data: any) => void) | null>(null);
 
   useEffect(() => {
     if (selectedConversationId) {
       fetchMessages(selectedConversationId);
       updateConversationHeader(selectedConversationId);
+      setTypingUsers([]);
 
       let isCancelled = false;
 
@@ -98,18 +102,47 @@ export default function ApplicantChatPage() {
           }
         };
 
-        handlerRef.current = handleNewMessage;
+        const handleTypingStart = (data: any) => {
+          if (data.conversationId === selectedConversationId && data.userId !== session?.user?.id) {
+            setTypingUsers((prev) => 
+              prev.includes(data.userName) ? prev : [...prev, data.userName]
+            );
+          }
+        };
+
+        const handleTypingStop = (data: any) => {
+          if (data.conversationId === selectedConversationId && data.userId !== session?.user?.id) {
+            setTypingUsers((prev) => prev.filter(u => u !== data.userName));
+          }
+        };
+
+        messageHandlerRef.current = handleNewMessage;
+        typingStartHandlerRef.current = handleTypingStart;
+        typingStopHandlerRef.current = handleTypingStop;
+
         socket.on("message:new", handleNewMessage);
+        socket.on("typing:start", handleTypingStart);
+        socket.on("typing:stop", handleTypingStop);
       };
 
       setupSocket();
 
       return () => {
         isCancelled = true;
-        if (socketRef.current && handlerRef.current) {
-          socketRef.current.off("message:new", handlerRef.current);
+        if (socketRef.current) {
+          if (messageHandlerRef.current) {
+            socketRef.current.off("message:new", messageHandlerRef.current);
+          }
+          if (typingStartHandlerRef.current) {
+            socketRef.current.off("typing:start", typingStartHandlerRef.current);
+          }
+          if (typingStopHandlerRef.current) {
+            socketRef.current.off("typing:stop", typingStopHandlerRef.current);
+          }
           socketRef.current.emit("leave:conversation", selectedConversationId);
-          handlerRef.current = null;
+          messageHandlerRef.current = null;
+          typingStartHandlerRef.current = null;
+          typingStopHandlerRef.current = null;
         }
       };
     } else {
@@ -283,10 +316,16 @@ export default function ApplicantChatPage() {
               <MessagePane
                 messages={messages}
                 currentUserId={session?.user?.id || ""}
+                typingUsers={typingUsers}
               />
             }
             messageComposer={
-              <MessageComposer onSendMessage={handleSendMessage} />
+              <MessageComposer 
+                onSendMessage={handleSendMessage}
+                conversationId={selectedConversationId || undefined}
+                userName={session?.user?.name || undefined}
+                userId={session?.user?.id || undefined}
+              />
             }
             conversationHeader={conversationHeader || undefined}
           />
