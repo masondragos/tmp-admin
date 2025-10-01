@@ -1,12 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Field from "@/components/ui/field";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -65,18 +68,26 @@ export default function LoginPage() {
     setIsLoading(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Handle successful login here
-      console.log("Login successful:", formData);
-      
-      // Redirect to portal page
-      window.location.href = '/portal';
-      
+      const result = await signIn("credentials", {
+        email: formData.email,
+        password: formData.password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setErrors({
+          email: "",
+          password: "Invalid email or password",
+        });
+      } else if (result?.ok) {
+        window.location.href = "/api/auth/redirect";
+      }
     } catch (error) {
       console.error("Login failed:", error);
-      alert("Login failed. Please try again.");
+      setErrors({
+        email: "",
+        password: "An error occurred. Please try again.",
+      });
     } finally {
       setIsLoading(false);
     }
