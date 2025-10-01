@@ -1,4 +1,14 @@
+"use client";
+
 export default function PortalPage() {
+  // Mock data for demonstration
+  const stats = {
+    totalLenders: 47,
+    totalProducts: 156,
+    totalApplications: 89,
+    totalMatches: 234
+  };
+
   return <div>
 
 <nav className="bg-gradient-to-r from-gray-50 to-white shadow-lg border-b border-gray-200">
@@ -46,7 +56,7 @@ export default function PortalPage() {
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                         </svg>
                     </div>
-                    <p className="text-3xl font-bold text-blue-600 group-hover:text-blue-700 transition-colors" id="totalLenders">-</p>
+                    <p className="text-3xl font-bold text-blue-600 group-hover:text-blue-700 transition-colors" id="totalLenders">{stats.totalLenders}</p>
                     <p className="text-sm text-gray-500 mt-1 group-hover:text-gray-600 transition-colors">Active lending partners</p>
                     <div className="mt-3 text-xs text-blue-500 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
                         Click to view all lenders →
@@ -59,7 +69,7 @@ export default function PortalPage() {
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                         </svg>
                     </div>
-                    <p className="text-3xl font-bold text-green-600 group-hover:text-green-700 transition-colors" id="totalProducts">-</p>
+                    <p className="text-3xl font-bold text-green-600 group-hover:text-green-700 transition-colors" id="totalProducts">{stats.totalProducts}</p>
                     <p className="text-sm text-gray-500 mt-1 group-hover:text-gray-600 transition-colors">Available loan types</p>
                     <div className="mt-3 text-xs text-green-500 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
                         Click to view all products →
@@ -72,7 +82,7 @@ export default function PortalPage() {
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                         </svg>
             </div>
-                    <p className="text-3xl font-bold text-green-600 group-hover:text-green-700 transition-colors" id="totalApplications">-</p>
+                    <p className="text-3xl font-bold text-green-600 group-hover:text-green-700 transition-colors" id="totalApplications">{stats.totalApplications}</p>
                     <p className="text-sm text-gray-500 mt-1 group-hover:text-gray-600 transition-colors">Submitted requests</p>
                     <div className="mt-3 text-xs text-green-500 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
                         Click to view all applications →
@@ -80,7 +90,7 @@ export default function PortalPage() {
                 </button>
                 <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-orange-500 hover:shadow-xl transition-shadow duration-300">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Matches Made</h3>
-                <p className="text-3xl font-bold text-orange-600" id="totalMatches">-</p>
+                <p className="text-3xl font-bold text-orange-600" id="totalMatches">{stats.totalMatches}</p>
                     <p className="text-sm text-gray-500 mt-1">Successful matches</p>
                 </div>
             </div>
