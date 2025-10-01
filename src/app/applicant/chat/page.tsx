@@ -72,6 +72,7 @@ export default function ApplicantChatPage() {
   const messageHandlerRef = useRef<((message: any) => void) | null>(null);
   const typingStartHandlerRef = useRef<((data: any) => void) | null>(null);
   const typingStopHandlerRef = useRef<((data: any) => void) | null>(null);
+  const messageReadHandlerRef = useRef<((data: any) => void) | null>(null);
 
   useEffect(() => {
     if (selectedConversationId) {
@@ -116,13 +117,33 @@ export default function ApplicantChatPage() {
           }
         };
 
+        const handleMessageRead = (data: { userId: string; messageIds: string[] }) => {
+          if (data.userId !== session?.user?.id) {
+            setMessages((prev) =>
+              prev.map((msg) =>
+                data.messageIds.includes(msg.id)
+                  ? {
+                      ...msg,
+                      reads: [
+                        ...(msg.reads || []),
+                        { userId: data.userId, readAt: new Date() },
+                      ],
+                    }
+                  : msg
+              )
+            );
+          }
+        };
+
         messageHandlerRef.current = handleNewMessage;
         typingStartHandlerRef.current = handleTypingStart;
         typingStopHandlerRef.current = handleTypingStop;
+        messageReadHandlerRef.current = handleMessageRead;
 
         socket.on("message:new", handleNewMessage);
         socket.on("typing:start", handleTypingStart);
         socket.on("typing:stop", handleTypingStop);
+        socket.on("message:read", handleMessageRead);
       };
 
       setupSocket();
@@ -139,10 +160,14 @@ export default function ApplicantChatPage() {
           if (typingStopHandlerRef.current) {
             socketRef.current.off("typing:stop", typingStopHandlerRef.current);
           }
+          if (messageReadHandlerRef.current) {
+            socketRef.current.off("message:read", messageReadHandlerRef.current);
+          }
           socketRef.current.emit("leave:conversation", selectedConversationId);
           messageHandlerRef.current = null;
           typingStartHandlerRef.current = null;
           typingStopHandlerRef.current = null;
+          messageReadHandlerRef.current = null;
         }
       };
     } else {
@@ -256,6 +281,38 @@ export default function ApplicantChatPage() {
     }
   };
 
+  const handleMessagesViewed = async (messageIds: string[]) => {
+    if (!selectedConversationId || messageIds.length === 0 || !session?.user?.id) return;
+
+    const currentUserId = session.user.id;
+
+    setMessages((prev) =>
+      prev.map((msg) =>
+        messageIds.includes(msg.id)
+          ? {
+              ...msg,
+              reads: [
+                ...(msg.reads || []),
+                { userId: currentUserId, readAt: new Date() },
+              ],
+            }
+          : msg
+      )
+    );
+
+    try {
+      const { getSocket } = await import("@/lib/socket");
+      const socket = await getSocket();
+      
+      socket.emit("message:read", {
+        conversationId: selectedConversationId,
+        messageIds,
+      });
+    } catch (error) {
+      console.error("Error marking messages as read:", error);
+    }
+  };
+
   return (
     <div className="h-[calc(100vh-4rem)]">
       <div className="h-full flex flex-col">
@@ -317,6 +374,8 @@ export default function ApplicantChatPage() {
                 messages={messages}
                 currentUserId={session?.user?.id || ""}
                 typingUsers={typingUsers}
+                conversationId={selectedConversationId || undefined}
+                onMessagesViewed={handleMessagesViewed}
               />
             }
             messageComposer={

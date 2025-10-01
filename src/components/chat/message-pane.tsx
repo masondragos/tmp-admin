@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { format } from "date-fns";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { Check, CheckCheck } from "lucide-react";
 
 interface Message {
   id: string;
@@ -13,16 +14,26 @@ interface Message {
     id: string;
     name: string;
   };
+  reads?: { userId: string; readAt: Date }[];
 }
 
 interface MessagePaneProps {
   messages: Message[];
   currentUserId: string;
   typingUsers?: string[];
+  conversationId?: string;
+  onMessagesViewed?: (messageIds: string[]) => void;
 }
 
-export function MessagePane({ messages, currentUserId, typingUsers = [] }: MessagePaneProps) {
+export function MessagePane({ 
+  messages, 
+  currentUserId, 
+  typingUsers = [],
+  conversationId,
+  onMessagesViewed
+}: MessagePaneProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -31,6 +42,25 @@ export function MessagePane({ messages, currentUserId, typingUsers = [] }: Messa
   useEffect(() => {
     scrollToBottom();
   }, [messages, typingUsers]);
+
+  useEffect(() => {
+    if (!conversationId || !onMessagesViewed) return;
+
+    const unreadMessages = messages
+      .filter(msg => 
+        msg.sender.id !== currentUserId && 
+        !msg.reads?.some(r => r.userId === currentUserId)
+      )
+      .map(msg => msg.id);
+
+    if (unreadMessages.length > 0) {
+      const timer = setTimeout(() => {
+        onMessagesViewed(unreadMessages);
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [messages, currentUserId, conversationId, onMessagesViewed]);
 
   const getInitials = (name: string) => {
     return name
@@ -41,8 +71,17 @@ export function MessagePane({ messages, currentUserId, typingUsers = [] }: Messa
       .slice(0, 2);
   };
 
+  const getReadStatus = (message: Message) => {
+    if (message.sender.id !== currentUserId) return null;
+    
+    const otherUsersRead = message.reads?.filter(r => r.userId !== currentUserId) || [];
+    const isRead = otherUsersRead.length > 0;
+    
+    return isRead ? "read" : "delivered";
+  };
+
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+    <div ref={containerRef} className="flex-1 overflow-y-auto p-4 space-y-4">
       {messages.length === 0 && typingUsers.length === 0 && (
         <div className="flex items-center justify-center h-full text-gray-500">
           <p>No messages yet. Start the conversation!</p>
@@ -50,6 +89,7 @@ export function MessagePane({ messages, currentUserId, typingUsers = [] }: Messa
       )}
       {messages.map((message) => {
         const isOwn = message.sender.id === currentUserId;
+        const readStatus = getReadStatus(message);
 
         return (
           <div
@@ -80,9 +120,18 @@ export function MessagePane({ messages, currentUserId, typingUsers = [] }: Messa
               >
                 <p className="text-sm">{message.content}</p>
               </div>
-              <span className="text-xs text-gray-500 mt-1">
-                {format(new Date(message.createdAt), "h:mm a")}
-              </span>
+              <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
+                <span>{format(new Date(message.createdAt), "h:mm a")}</span>
+                {readStatus && (
+                  <>
+                    {readStatus === "read" ? (
+                      <CheckCheck className="h-3 w-3 text-blue-500" />
+                    ) : (
+                      <Check className="h-3 w-3" />
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           </div>
         );
