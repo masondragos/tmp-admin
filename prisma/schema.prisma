@@ -1,0 +1,112 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  APPLICANT
+  LENDER
+}
+
+enum ConversationType {
+  ADMIN_APPLICANT
+  MULTI_PARTY
+}
+
+enum ConversationStatus {
+  ACTIVE
+  ARCHIVED
+  CLOSED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      UserRole
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  sentMessages        Message[]                @relation("SentMessages")
+  conversationsCreated Conversation[]          @relation("ConversationCreator")
+  participations      ConversationParticipant[]
+  messageReads        MessageRead[]
+
+  @@index([email])
+  @@index([role])
+}
+
+model Conversation {
+  id        String             @id @default(uuid())
+  type      ConversationType   @default(ADMIN_APPLICANT)
+  status    ConversationStatus @default(ACTIVE)
+  createdById String
+  createdBy   User             @relation("ConversationCreator", fields: [createdById], references: [id])
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  // Relations
+  participants ConversationParticipant[]
+  messages     Message[]
+
+  @@index([status])
+  @@index([createdById])
+}
+
+model ConversationParticipant {
+  id             String       @id @default(uuid())
+  conversationId String
+  userId         String
+  joinedAt       DateTime     @default(now())
+  leftAt         DateTime?
+  isActive       Boolean      @default(true)
+
+  // Relations
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([conversationId])
+  @@index([userId])
+}
+
+model Message {
+  id             String   @id @default(uuid())
+  conversationId String
+  senderId       String
+  content        String   @db.Text
+  attachments    Json?    // Array of attachment URLs/metadata
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  conversation Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User          @relation("SentMessages", fields: [senderId], references: [id])
+  reads        MessageRead[]
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([createdAt])
+}
+
+model MessageRead {
+  id        String   @id @default(uuid())
+  messageId String
+  userId    String
+  readAt    DateTime @default(now())
+
+  // Relations
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([messageId])
+  @@index([userId])
+}
