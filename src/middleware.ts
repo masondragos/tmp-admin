@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
-  const authToken = request.cookies.get('authToken')?.value
+  const authToken = request.cookies.get('employee_auth_token')?.value
   console.log("pathname", pathname)
   
   // If user has auth token and tries to access login page, redirect to portal
