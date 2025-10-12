@@ -14,7 +14,6 @@ import { Input } from "@/components/ui/input";
 import { useGetQuote, type UserQuote } from "@/hooks/quotes/use-get-quote";
 import { Search, FileText, CheckCircle2, Loader2, MapPin, DollarSign, Calendar, Phone } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { LoanDetailsSheet } from "@/components/sheets/loan-details-sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import AppPagination from "@/components/ui/custom-pagination";
 
@@ -84,12 +83,22 @@ const LOAN_TYPES = [
   { value: "dscr_rental", label: "DSCR Rental" },
 ];
 
+// Helper function to check if application was created today
+const isCreatedToday = (createdAt: string) => {
+  const today = new Date();
+  const created = new Date(createdAt);
+  
+  return (
+    created.getDate() === today.getDate() &&
+    created.getMonth() === today.getMonth() &&
+    created.getFullYear() === today.getFullYear()
+  );
+};
+
 
 export default function ApplicationsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [selectedLoan, setSelectedLoan] = useState<UserQuote | null>(null);
 
   // Get URL parameters with defaults
   const currentPage = parseInt(searchParams.get("page") || "1");
@@ -109,8 +118,8 @@ export default function ApplicationsContent() {
   });
 
   const handleViewDetails = (application: UserQuote) => {
-    setSelectedLoan(application);
-    setIsSheetOpen(true);
+    // Open in new tab
+    window.open(`/portal/applications/${application.id}`, '_blank');
   };
 
   const handlePageChange = (page: number) => {
@@ -281,9 +290,16 @@ export default function ApplicationsContent() {
                 <Card key={application.id} className="hover:shadow-lg transition-shadow rounded-[12px] relative flex flex-col">
                   <CardHeader className="pb-3">
                     <div>
-                      <CardTitle className="text-lg font-semibold text-gray-900">
-                        {application.quoteApplicantInfo.full_name}
-                      </CardTitle>
+                      <div className="flex items-center justify-between mb-1">
+                        <CardTitle className="text-lg font-semibold text-gray-900">
+                          {application.quoteApplicantInfo.full_name}
+                        </CardTitle>
+                        {isCreatedToday(application.created_at) && (
+                          <Badge className="bg-green-500 hover:bg-green-600 text-white text-xs">
+                            New
+                          </Badge>
+                        )}
+                      </div>
                       <p className="text-sm text-gray-600 mt-1">
                         {application.address}
                       </p>
@@ -351,17 +367,6 @@ export default function ApplicationsContent() {
         </div>
 
       </div>
-
-      {selectedLoan && (
-        <LoanDetailsSheet
-          isOpen={isSheetOpen}
-          onClose={() => {
-            setIsSheetOpen(false);
-            setSelectedLoan(null);
-          }}
-          loan={selectedLoan}
-        />
-      )}
     </div>
   );
 }
