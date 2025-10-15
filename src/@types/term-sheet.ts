@@ -163,3 +163,19 @@ export interface LoanConnectionSearchParams {
   limit?: string;
   search?: string;
 }
+
+
+export interface LenderTermSheet {
+  id: number;
+  quote_id: number;
+  lender_id: number;
+  loan_product_id: number;
+  loan_connection_id: number;
+  term_sheet_data: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export type LenderTermSheetsResponse = LenderTermSheet[];
+

@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,8 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import AppPagination from "@/components/ui/custom-pagination";
 import { useTermSheets } from "@/hooks/loan-products/use-term-sheets";
-import { TermSheet } from "@/@types/term-sheet";
-import { TermSheetDetailsSheet } from "@/components/sheets/term-sheet-details-sheet";
 import {
   Eye,
   FileText,
@@ -62,10 +59,6 @@ export default function TermSheetsContent() {
   const page = parseInt(searchParams.get("page") || "1");
   const status = searchParams.get("status") || "pending";
 
-  // Local state
-  const [isDetailsSheetOpen, setIsDetailsSheetOpen] = useState(false);
-  const [selectedTermSheet, setSelectedTermSheet] = useState<TermSheet | null>(null);
-
   // Fetch term sheets
   const {
     data: termSheetsResponse,
@@ -91,9 +84,8 @@ export default function TermSheetsContent() {
     router.push(`?${params.toString()}`);
   };
 
-  const handleViewDetails = (termSheet: TermSheet) => {
-    setSelectedTermSheet(termSheet);
-    setIsDetailsSheetOpen(true);
+  const handleViewDetails = (termSheetId: number) => {
+    router.push(`/portal/term-sheets/${termSheetId}`);
   };
 
   if (error) {
@@ -354,7 +346,7 @@ export default function TermSheetsContent() {
                 {/* Action Button */}
                 <div className="pt-3">
                   <Button
-                    onClick={() => handleViewDetails(termSheet)}
+                    onClick={() => handleViewDetails(termSheet.id)}
                     className="w-full bg-[#F68921] text-white py-2 px-4 rounded-md hover:bg-[#E67A1A] transition-colors text-sm font-medium"
                   >
                     <Eye className="h-4 w-4 mr-2" />
@@ -377,16 +369,6 @@ export default function TermSheetsContent() {
           />
         </div>
       )}
-
-      {/* Term Sheet Details Sheet */}
-      <TermSheetDetailsSheet
-        isOpen={isDetailsSheetOpen}
-        onClose={() => {
-          setIsDetailsSheetOpen(false);
-          setSelectedTermSheet(null);
-        }}
-        termSheet={selectedTermSheet}
-      />
     </div>
   );
 }

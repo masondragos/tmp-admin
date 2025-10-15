@@ -6,7 +6,7 @@ export interface ApiError {
   status?: number
   originalError?: unknown
 }
-export const stage: "dev" | "test" | "prod" = "prod";
+export const stage: "dev" | "test" | "prod" = "dev";
 export const BASE_ENDPOINTS = {
   dev: "http://localhost:4000/api/v1",
   prod: "https://api.themortgageplatform.com/api/v1",
